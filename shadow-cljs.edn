@@ -1,0 +1,18 @@
+;; shadow-cljs configuration
+{:source-paths
+ ["src/dev"
+  "src/main"
+  "src/test"]
+
+ :dependencies
+ [[reagent "1.0.0"]
+  [tick "0.6.2"]]
+
+ :dev-http {9090 "public/"}
+
+ :builds
+ {:app {:output-dir "public/compiledjs"
+        :asset-path "compiledjs"
+        :target :browser
+        :modules {:main {:init-fn windify.main/main!}}
+        :devtools {:after-load windify.main/reload!}}}}
