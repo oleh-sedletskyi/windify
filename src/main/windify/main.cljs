@@ -144,7 +144,9 @@
     (for [key (keys (:hourly @state))]
       ^{:key (str key)} [:li key])]
    [:div
-    [:pre {:style {:white-space "pre-wrap"}} [:code (str @parsed-state)]]]
+    [:pre {:style {:white-space "pre-wrap"}} [:code (let [k (-> (keys @parsed-state) first)]
+                                                      (str {k (get @parsed-state k)})
+                                                       )]]]
 
    (comment
      [:div
