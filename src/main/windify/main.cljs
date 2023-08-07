@@ -126,26 +126,26 @@
    [:div
     [:pre [:code
            ;; EEST
-           (t/in (t/instant) "UTC+02:00")
-           (str (get-hour-unit-style "2023-08-07T18:00"))
+           ;; (t/in (t/instant) "UTC+02:00")
+           ;; (get-hour-unit-style "2023-08-07T18:00")
            [:br]
-           (-> (t/now)
-               (t/offset-by 3)
-               (t/time)
-               (t/minute))
+           #_(-> (t/now)
+                 (t/offset-by 3)
+                 (t/time)
+                 (t/minute))
            [:br]
-           (let [daily (:daily @state)
-                 values [:time :sunrise :sunset]
-                 daily-data (->> ((apply juxt values) daily)
-                                 (apply interleave)
-                                 (partition (count values))
-                                 (map #(zipmap values %))
-                                 (group-by :time)
-                                 (map (fn [[k v]]
-                                        {(str k) (first v)}))
-                                 (into {}))]
+           #_(let [daily (:daily @state)
+                   values [:time :sunrise :sunset]
+                   daily-data (->> ((apply juxt values) daily)
+                                   (apply interleave)
+                                   (partition (count values))
+                                   (map #(zipmap values %))
+                                   (group-by :time)
+                                   (map (fn [[k v]]
+                                          {(str k) (first v)}))
+                                   (into {}))]
              ;; daily-data
-             (get daily-data "2023-08-05"))]]]
+               (get daily-data "2023-08-05"))]]]
 
    [:div
     {:style {:display :flex}}
@@ -193,17 +193,17 @@
            [:div (get-hour-unit-style (:time hour)) (get-int-value :windspeed_10m hour)]
            [:div (get-hour-unit-style (:time hour)) (get-int-value :windgusts_10m hour)]
            [:div (get-hour-unit-style (:time hour)) (get-arrow (get-value :winddirection_10m hour))]
-           [:div (get-hour-unit-style (:time hour)) (get-int-value :cloudcover hour)]
+           [:div (get-hour-unit-style (:time hour)) (get-int-value :cloudcover hour)]])]])]
 
-           ])]])]
-   (for [key (keys @state)]
-     ^{:key (str key)} [:li key])
-   [:div [:p "hourly:"]
-    (for [key (keys (:hourly @state))]
-      ^{:key (str key)} [:li key])]
-   [:div
-    [:pre {:style {:white-space "pre-wrap"}} [:code (let [k (-> (keys @parsed-state) first)]
-                                                      (str {k (get @parsed-state k)}))]]]
+   (comment
+     (for [key (keys @state)]
+       ^{:key (str key)} [:li key])
+     [:div [:p "hourly:"]
+      (for [key (keys (:hourly @state))]
+        ^{:key (str key)} [:li key])]
+     [:div
+      [:pre {:style {:white-space "pre-wrap"}} [:code (let [k (-> (keys @parsed-state) first)]
+                                                        (str {k (get @parsed-state k)}))]]])
 
    (comment
      [:div
