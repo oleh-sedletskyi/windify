@@ -2,7 +2,9 @@
   "name": "windify",
   "version": "1.0.0",
   "description": "Weather forecast app",
-  "scripts": {},
+  "scripts": {
+      "build": "shadow-cljs release --verbose app"
+  },
   "devDependencies": {
     "shadow-cljs": "^2.18.0"
   },
