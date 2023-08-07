@@ -102,21 +102,6 @@
        :text-align :center
        :transform (str "rotate(" angle "deg)")}} (.-value el)]))
 
-(defn get-time-in-percents [date]
-  (let [curr-dt (-> (t/now)
-                    (t/offset-by 3) ;; TODO: Check https://juxt.github.io/tick/#_time_zones_offset
-                    )
-        date (t/date date)]
-    (if (= date (t/date curr-dt))
-      (let [time (-> curr-dt
-                          (t/time))
-                 hours (t/hour time)
-                 minutes (t/minute time)
-                 curr-min (+ (* hours 60) minutes)
-                 all-min (* 24 60)]
-             (.round js/Math (/ (* curr-min 100) all-min)))
-      0)))
-
 (defn get-hour-unit-style [date]
   (let [curr-dt (-> (t/now)
                     (t/offset-by 3) ;; TODO: Check https://juxt.github.io/tick/#_time_zones_offset
@@ -148,7 +133,6 @@
                (t/offset-by 3)
                (t/time)
                (t/minute))
-           [:div (get-time-in-percents (t/now))]
            [:br]
            (let [daily (:daily @state)
                  values [:time :sunrise :sunset]
