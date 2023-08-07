@@ -172,10 +172,6 @@
        [:div :Sunset " " (-> (t/date-time (:sunset v))
                              (t/time)
                              str)]
-       #_[:div {:style {:width (str (get-time-in-percents d) "%")
-                        :height "3px"
-                        :border-bottom "2px solid black"
-                        :position :static}}]
 
        [:div
         {:style {:display :flex}}
