@@ -83,29 +83,72 @@
 
 (get-data-from-api)
 
+(defn get-hourly-unit [unit]
+  ;; (.log js/console (str unit))
+  (get-in @state [:hourly_units unit]))
+
+(defn get-value [unit data]
+  (unit data))
+
+(defn get-int-value [unit data]
+  (js/parseInt (get-value unit data)))
+
+(defn get-arrow [angle]
+  (let [el (.createElement js/document "textarea")]
+    (set! (.-innerHTML el) "&darr;")
+    [:div
+     {:style
+      {:position :static
+       :text-align :center
+       :transform (str "rotate(" angle "deg)")}} (.-value el)]))
+
+(defn get-time-in-percents [date]
+  (let [curr-dt (-> (t/now)
+                    (t/offset-by 3) ;; TODO: Check https://juxt.github.io/tick/#_time_zones_offset
+                    )
+        date (t/date date)]
+    (if (= date (t/date curr-dt))
+      (let [time (-> curr-dt
+                          (t/time))
+                 hours (t/hour time)
+                 minutes (t/minute time)
+                 curr-min (+ (* hours 60) minutes)
+                 all-min (* 24 60)]
+             (.round js/Math (/ (* curr-min 100) all-min)))
+      0)))
+
+(defn get-hour-unit-style [date]
+  (let [curr-dt (-> (t/now)
+                    (t/offset-by 3) ;; TODO: Check https://juxt.github.io/tick/#_time_zones_offset
+                    )
+        date (t/date-time date)]
+    (when (= (t/date date) (t/date curr-dt))
+      (let [curr-time (-> curr-dt
+                          (t/time))
+            curr-hour (t/hour curr-time)
+            hour (t/hour date)]
+        (when (= hour curr-hour)
+          {:style {:font-weight "bold"}})))))
+
+;; TODO: Add cloudcover https://emojiguide.org/sun-behind-cloudelelelefdf
+;; TODO: Add forecast days dropdown
+;; TODO: Add units column
+
 (defn app []
   [:div
    [:h1 "Windify"]
 
    [:div
-    [:pre [:code #_(let [hourly (:hourly @state)
-                         values [:windspeed_10m :winddirection_10m :snow_depth :surface_pressure :time :relativehumidity_2m :windgusts_10m :cloudcover :showers :apparent_temperature :precipitation :snowfall :temperature_2m :rain]]
-                     (->> ((apply juxt values) hourly)
-                          (apply interleave)
-                          (partition (count values))
-                          (map #(zipmap values %))
-                          (group-by #(->> (t/date-time (:time %))
-                                          (t/date)
-                                          str))
-                          #_(map (fn [[k v]]
-                                   {(str k) (->> v
-                                                 (sort-by #(t/date-time (:time %))))}))
-                          str
-                          #_(str/join "|")))
-           ;; (parse-response)
-           ;; (str @parsed-state)
+    [:pre [:code
+           ;; EEST
+           (t/in (t/instant) "UTC+02:00")
+           (str (get-hour-unit-style "2023-08-07T18:00"))
            [:br]
-           #_(:daily @state)
+           (-> (t/now)
+               (t/offset-by 3)
+               (t/time)
+               (t/minute))
+           [:div (get-time-in-percents (t/now))]
            [:br]
            (let [daily (:daily @state)
                  values [:time :sunrise :sunset]
@@ -117,27 +160,58 @@
                                  (map (fn [[k v]]
                                         {(str k) (first v)}))
                                  (into {}))]
-
              ;; daily-data
              (get daily-data "2023-08-05"))]]]
 
    [:div
     {:style {:display :flex}}
-    (for [hour-data (:time (:hourly @state))]
-      ^{:key (str hour-data)}
+    (for [[d v] @parsed-state]
+      ^{:key d}
       [:div
        {:style {:flex "1"
-                :padding "0.2em"}}
-       [:p (-> (t/date-time hour-data)
-               t/day-of-week
-               str
-               str/capitalize
-               (subs 0 2))
-        [:br]
-        (->> (t/date-time hour-data)
-             t/time
-             str)]])]
+                :padding "0.2em"
+                :text-align :center
+                :border "1px solid gray"}}
+       ;; (.log js/console d v)
+       [:p
+        (-> (t/date d)
+            t/day-of-week
+            str
+            str/capitalize
+            (subs 0 2))
+        " "
+        (-> (t/date d)
+            str)]
+       [:div :Sunrise " " (-> (t/date-time (:sunrise v))
+                              (t/time)
+                              str)]
+       [:div :Sunset " " (-> (t/date-time (:sunset v))
+                             (t/time)
+                             str)]
+       #_[:div {:style {:width (str (get-time-in-percents d) "%")
+                        :height "3px"
+                        :border-bottom "2px solid black"
+                        :position :static}}]
 
+       [:div
+        {:style {:display :flex}}
+        (for [hour (:hours v)]
+          ^{:key (:time hour)}
+          [:div
+           {:style {:flex "1"
+                    :padding "0.1em"}}
+           [:p (get-hour-unit-style (:time hour))
+            (-> (t/date-time (:time hour))
+                (t/hour)
+                str)]
+           [:div (get-hour-unit-style (:time hour)) (get-value :precipitation hour)]
+           [:div (get-hour-unit-style (:time hour)) (get-int-value :apparent_temperature hour)]
+           [:div (get-hour-unit-style (:time hour)) (get-int-value :windspeed_10m hour)]
+           [:div (get-hour-unit-style (:time hour)) (get-int-value :windgusts_10m hour)]
+           [:div (get-hour-unit-style (:time hour)) (get-arrow (get-value :winddirection_10m hour))]
+           [:div (get-hour-unit-style (:time hour)) (get-int-value :cloudcover hour)]
+
+           ])]])]
    (for [key (keys @state)]
      ^{:key (str key)} [:li key])
    [:div [:p "hourly:"]
@@ -145,8 +219,7 @@
       ^{:key (str key)} [:li key])]
    [:div
     [:pre {:style {:white-space "pre-wrap"}} [:code (let [k (-> (keys @parsed-state) first)]
-                                                      (str {k (get @parsed-state k)})
-                                                       )]]]
+                                                      (str {k (get @parsed-state k)}))]]]
 
    (comment
      [:div
