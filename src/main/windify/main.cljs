@@ -155,7 +155,7 @@
                (get daily-data "2023-08-05"))]]]
 
    [:div
-    {:style {:display :flex}}
+    {:style {:float "left"}}
     (doall
      (for [[d v] @parsed-state]
        ^{:key d}
