@@ -112,12 +112,19 @@
                           (t/time))
             curr-hour (t/hour curr-time)
             hour (t/hour date)]
-        (when (= hour curr-hour)
-          {:style {:font-weight "bold"}})))))
+        (cond
+          (= hour curr-hour) {:style {:font-weight "bold"}}
+          (< hour curr-hour) {:style {:opacity "0.6"}}
+          :else nil)))))
 
 ;; TODO: Add cloudcover https://emojiguide.org/sun-behind-cloudelelelefdf
 ;; TODO: Add forecast days dropdown
 ;; TODO: Add units column
+
+(defn get-hidden-div []
+  [:div {:style {:opacity "0"
+                 ;; :padding "0.1em"
+                 }} "Tu"])
 
 (defn app []
   [:div
@@ -144,52 +151,64 @@
                                    (map (fn [[k v]]
                                           {(str k) (first v)}))
                                    (into {}))]
-             ;; daily-data
+               ;; daily-data
                (get daily-data "2023-08-05"))]]]
 
    [:div
     {:style {:display :flex}}
-    (for [[d v] @parsed-state]
-      ^{:key d}
-      [:div
-       {:style {:flex "1"
-                :padding "0.2em"
-                :text-align :center
-                :border "1px solid gray"}}
-       ;; (.log js/console d v)
-       [:p
-        (-> (t/date d)
-            t/day-of-week
-            str
-            str/capitalize
-            (subs 0 2))
-        " "
-        (-> (t/date d)
-            str)]
-       [:div :Sunrise " " (-> (t/date-time (:sunrise v))
+    (doall
+     (for [[d v] @parsed-state]
+       ^{:key d}
+       [:div
+        {:style {:flex "1"
+                 :padding "0.2em"
+                 :text-align :center
+                 :border "0.5px solid gray"}}
+        ;; (.log js/console d v)
+        [:div
+         (-> (t/date d)
+             t/day-of-week
+             str
+             str/capitalize
+             (subs 0 2))
+         " "
+         (-> (t/date d)
+             str)]
+        [:div :Sunrise " " (-> (t/date-time (:sunrise v))
+                               (t/time)
+                               str)]
+        [:div :Sunset " " (-> (t/date-time (:sunset v))
                               (t/time)
                               str)]
-       [:div :Sunset " " (-> (t/date-time (:sunset v))
-                             (t/time)
-                             str)]
 
-       [:div
-        {:style {:display :flex}}
-        (for [hour (:hours v)]
-          ^{:key (:time hour)}
-          [:div
-           {:style {:flex "1"
-                    :padding "0.1em"}}
-           [:p (get-hour-unit-style (:time hour))
-            (-> (t/date-time (:time hour))
-                (t/hour)
-                str)]
-           [:div (get-hour-unit-style (:time hour)) (get-value :precipitation hour)]
-           [:div (get-hour-unit-style (:time hour)) (get-int-value :apparent_temperature hour)]
-           [:div (get-hour-unit-style (:time hour)) (get-int-value :windspeed_10m hour)]
-           [:div (get-hour-unit-style (:time hour)) (get-int-value :windgusts_10m hour)]
-           [:div (get-hour-unit-style (:time hour)) (get-arrow (get-value :winddirection_10m hour))]
-           [:div (get-hour-unit-style (:time hour)) (get-int-value :cloudcover hour)]])]])]
+        [:div
+         {:style {:display :flex}}
+         [:div {:style {:flex "1"
+                        ;; :text-align :left
+                        :padding "0.1em"}}
+          [:div :Hour]
+          [:div "Rain," (get-hourly-unit :precipitation)]
+          [:div "T,"(get-hourly-unit :apparent_temperature)]
+          [:div "Wind,"(get-hourly-unit :windspeed_10m)]
+          [:div "Gusts,"(get-hourly-unit :windgusts_10m)]
+          [:div (get-hourly-unit :winddirection_10m)]
+          [:div "Clouds,"(get-hourly-unit :cloudcover)]]
+
+         (for [hour (:hours v)]
+           ^{:key (:time hour)}
+           [:div
+            {:style {:flex "1"
+                     :padding "0.1em"}}
+            [:div (get-hour-unit-style (:time hour))
+             (-> (t/date-time (:time hour))
+                 (t/hour)
+                 str)]
+            [:div (get-hour-unit-style (:time hour)) (get-value :precipitation hour)]
+            [:div (get-hour-unit-style (:time hour)) (get-int-value :apparent_temperature hour)]
+            [:div (get-hour-unit-style (:time hour)) (get-int-value :windspeed_10m hour)]
+            [:div (get-hour-unit-style (:time hour)) (get-int-value :windgusts_10m hour)]
+            [:div (get-hour-unit-style (:time hour)) (get-arrow (get-value :winddirection_10m hour))]
+            [:div (get-hour-unit-style (:time hour)) (get-int-value :cloudcover hour)]])]]))]
 
    (comment
      (for [key (keys @state)]
