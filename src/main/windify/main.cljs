@@ -33,7 +33,7 @@
                                 (str/join ","))
                     :windspeed_unit "ms"
                     :timezone "Europe%2FKyiv"
-                    :forecast_days 7}
+                    :forecast_days 5}
         params (->> api-params
                     (map (fn [[k v]]
                            (str (name k) "=" v)))
@@ -65,7 +65,8 @@
                     :sunrise (get-in daily-data [k :sunrise]) 
                     :hours (->> v
                                 (sort-by #(t/date-time (:time %))))}}))
-         (apply merge))))
+         (apply merge)
+         (into (sorted-map)))))
 
 (defn handler [response]
   (reset! state response)
@@ -84,7 +85,6 @@
 (get-data-from-api)
 
 (defn get-hourly-unit [unit]
-  ;; (.log js/console (str unit))
   (get-in @state [:hourly_units unit]))
 
 (defn get-value [unit data]
@@ -93,14 +93,60 @@
 (defn get-int-value [unit data]
   (js/parseInt (get-value unit data)))
 
-(defn get-arrow [angle]
+(defn get-html-entity [html-code style]
   (let [el (.createElement js/document "textarea")]
-    (set! (.-innerHTML el) "&darr;")
+    (set! (.-innerHTML el) html-code)
     [:div
-     {:style
-      {:position :static
-       :text-align :center
-       :transform (str "rotate(" angle "deg)")}} (.-value el)]))
+     (merge {:style {:position :static
+                     :text-align :center}}
+            style) (.-value el)]))
+
+(def emoji
+  {:sun                    "&#9728;&#65039;"
+   :sun-behind-small-cloud "&#127780;&#65039;"
+   :sun-behind-cloud       "&#9925;"
+   :sun-behind-rain-cloud  "&#127782;&#65039;"
+   :sun-behind-large-cloud "&#127781;&#65039;"
+   :cloud                  "&#9729;&#65039;"
+   :cloud-with-rain        "&#127783;&#65039;"
+   :cloud-with-snow        "&#127784;&#65039;"
+   :thermometer            "&#127777;&#65039;"
+   :north-arrow            "&darr;"})
+
+(defn get-arrow [angle]
+  (let [style {:style
+               {:position :static
+                :text-align :center
+                :transform (str "rotate(" angle "deg)")}}]
+    (get-html-entity (:north-arrow emoji) style)))
+
+(defn get-sky-view [precipitation clouds]
+  (let [emoji (cond
+                (and
+                 (= precipitation 0)
+                 (< clouds 11)) (:sun emoji)
+                (and
+                 (= precipitation 0)
+                 (< clouds 31)) (:sun-behind-small-cloud emoji)
+                (and
+                 (= precipitation 0)
+                 (< clouds 61)) (:sun-behind-cloud emoji)
+                (and
+                 (= precipitation 0)
+                 (< clouds 91)) (:sun-behind-large-cloud emoji)
+                (and
+                 (= precipitation 0)
+                 (> clouds 90)) (:cloud emoji)
+                (and
+                 (> precipitation 0.1)
+                 (< clouds 85)) (:sun-behind-rain-cloud emoji)
+                (and
+                 (> precipitation 0.1)
+                 (> clouds 84)) (:cloud-with-rain emoji)
+                :else "&#9940;")]
+    (get-html-entity emoji {:style
+                            {:position :static
+                             :text-align :center}})))
 
 (defn get-hour-unit-style [date]
   (let [curr-dt (-> (t/now)
@@ -117,9 +163,9 @@
           (< hour curr-hour) {:style {:opacity "0.6"}}
           :else nil)))))
 
-;; TODO: Add cloudcover https://emojiguide.org/sun-behind-cloudelelelefdf
 ;; TODO: Add forecast days dropdown
-;; TODO: Add units column
+;; TODO: Add location chooser
+;; TODO: Fix vertical formatting
 
 (defn get-hidden-div []
   [:div {:style {:opacity "0"
@@ -139,20 +185,7 @@
            #_(-> (t/now)
                  (t/offset-by 3)
                  (t/time)
-                 (t/minute))
-           [:br]
-           #_(let [daily (:daily @state)
-                   values [:time :sunrise :sunset]
-                   daily-data (->> ((apply juxt values) daily)
-                                   (apply interleave)
-                                   (partition (count values))
-                                   (map #(zipmap values %))
-                                   (group-by :time)
-                                   (map (fn [[k v]]
-                                          {(str k) (first v)}))
-                                   (into {}))]
-               ;; daily-data
-               (get daily-data "2023-08-05"))]]]
+                 (t/minute))]]]
 
    [:div
     {:style {:float "left"}}
@@ -180,13 +213,13 @@
         [:div :Sunset " " (-> (t/date-time (:sunset v))
                               (t/time)
                               str)]
-
         [:div
          {:style {:display :flex}}
          [:div {:style {:flex "1"
                         ;; :text-align :left
                         :padding "0.1em"}}
           [:div :Hour]
+          [:div (get-html-entity (:sun-behind-small-cloud emoji) {})]
           [:div "Rain," (get-hourly-unit :precipitation)]
           [:div "T,"(get-hourly-unit :apparent_temperature)]
           [:div "Wind,"(get-hourly-unit :windspeed_10m)]
@@ -203,6 +236,7 @@
              (-> (t/date-time (:time hour))
                  (t/hour)
                  str)]
+            (get-sky-view (get-value :precipitation hour) (get-int-value :cloudcover hour))
             [:div (get-hour-unit-style (:time hour)) (get-value :precipitation hour)]
             [:div (get-hour-unit-style (:time hour)) (get-int-value :apparent_temperature hour)]
             [:div (get-hour-unit-style (:time hour)) (get-int-value :windspeed_10m hour)]
