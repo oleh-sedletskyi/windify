@@ -169,7 +169,6 @@
           (< hour curr-hour) {:style {:opacity "0.6"}}
           :else nil)))))
 
-;; TODO: Add location dropdown
 ;; TODO: Fix vertical formatting
 
 (defn get-hidden-div []
@@ -183,8 +182,7 @@
    [:div
     [:label {:for :forecast-days} "Forecast for:"]
     [:select {:name :forecast-days
-              :id :forecast-days-num
-              :list :default-forecast-days
+              :id :forecast-days
               :value (:forecast-days @params)
               :on-change (fn [e]
                            (swap! params assoc :forecast-days (-> e .-target .-value))
@@ -195,7 +193,24 @@
      [:option {:value 14} "14 days"]]]
 
    [:div
+    [:label {:for :location} "Location:"]
+    [:select {:name :location
+              :id :location-dropdown
+              :value (str (:latitude @params) ";" (:longitude @params))
+              :on-change (fn [e]
+                           (let [[lat long] (->> (-> e .-target .-value)
+                                                 (#(str/split % #";"))
+                                                 (map (fn [v]
+                                                        (js/parseFloat v))))]
+                             (swap! params assoc :latitude lat :longitude long)
+                             (get-data-from-api)))}
+     [:option {:value "50.4236;30.382"} "Наталія"]
+     [:option {:value "50.512;30.5082"} "Олег"]
+     [:option {:value "50.3857;30.322"} "Сашко"]]]
+
+   [:div
     [:pre [:code
+           ;; (str @params)
            ;; EEST
            ;; (t/in (t/instant) "UTC+02:00")
            ;; (get-hour-unit-style "2023-08-07T18:00")
