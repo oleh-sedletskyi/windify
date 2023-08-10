@@ -123,6 +123,14 @@
   (let [style {:style
                {:position :static
                 :text-align :center
+                :color (cond
+                         (or
+                          (> angle 315)
+                          (< angle 46)) :blue
+                         (and
+                          (> angle 135)
+                          (< angle 225)) :orangered
+                         :else :black)
                 :transform (str "rotate(" angle "deg)")}}]
     (get-html-entity (:north-arrow emoji) style)))
 
@@ -169,6 +177,29 @@
           (< hour curr-hour) {:style {:opacity "0.6"}}
           :else nil)))))
 
+(defn get-temperature-styling [time temp]
+  (let [style (get-hour-unit-style time)]
+    (assoc-in style [:style :color] (cond
+                                      (> temp 27) :orangered
+                                      (< temp -5) :blue
+                                      :else :black))))
+
+(defn get-wind-styling [time wind]
+  (let [style (get-hour-unit-style time)]
+    (assoc-in style [:style :color] (cond
+                                      (> wind 15) :red
+                                      (> wind 10) :orangered
+                                      :else :black))))
+
+(defn get-rain-styling [time rain]
+  (let [style (get-hour-unit-style time)]
+    (assoc-in style [:style :color] (cond
+                                      (> rain 4) :blue
+                                      :else :black))))
+
+;; TODO: Store location in cookies
+;; TODO: Pick location from the map
+;; TODO: Add coloring to temperature/wind/rain/wind-direction
 ;; TODO: Fix vertical formatting
 
 (defn get-hidden-div []
@@ -256,20 +287,27 @@
 
          (for [hour (:hours v)]
            ^{:key (:time hour)}
-           [:div
-            {:style {:flex "1"
-                     :padding "0.1em"}}
-            [:div (get-hour-unit-style (:time hour))
-             (-> (t/date-time (:time hour))
-                 (t/hour)
-                 str)]
-            (get-sky-view (get-value :precipitation hour) (get-int-value :cloudcover hour))
-            [:div (get-hour-unit-style (:time hour)) (get-value :precipitation hour)]
-            [:div (get-hour-unit-style (:time hour)) (get-int-value :apparent_temperature hour)]
-            [:div (get-hour-unit-style (:time hour)) (get-int-value :windspeed_10m hour)]
-            [:div (get-hour-unit-style (:time hour)) (get-int-value :windgusts_10m hour)]
-            [:div (get-hour-unit-style (:time hour)) (get-arrow (get-value :winddirection_10m hour))]
-            [:div (get-hour-unit-style (:time hour)) (get-int-value :cloudcover hour)]])]]))]
+           (let [time (:time hour)
+                 precipitation (get-value :precipitation hour)
+                 cloudcover (get-int-value :cloudcover hour)
+                 temperature (get-int-value :apparent_temperature hour)
+                 windspeed (get-int-value :windspeed_10m hour)
+                 windgusts (get-int-value :windgusts_10m hour)
+                 winddirection (get-value :winddirection_10m hour)]
+             [:div
+              {:style {:flex "1"
+                       :padding "0.1em"}}
+              [:div (get-hour-unit-style time)
+               (-> (t/date-time time)
+                   (t/hour)
+                   str)]
+              (get-sky-view precipitation cloudcover)
+              [:div (get-rain-styling time precipitation) precipitation]
+              [:div (get-temperature-styling time temperature) temperature]
+              [:div (get-wind-styling time windspeed) windspeed]
+              [:div (get-hour-unit-style time) windgusts]
+              [:div (get-hour-unit-style time) (get-arrow winddirection)]
+              [:div (get-hour-unit-style time) cloudcover]]))]]))]
 
    (comment
      (for [key (keys @state)]
