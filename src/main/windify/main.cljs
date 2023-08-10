@@ -8,32 +8,38 @@
 
 (defonce parsed-state (reagent/atom {}))
 
+(defonce params
+  (reagent/atom
+   {:forecast-days 3
+    :latitude 50.5120
+    :longitude 30.5082}))
+
 (defn get-api-url []
   ;; 50.512082226364534, 30.508248275600494
   ;; Europe/Kyiv
   (let [base-url "https://api.open-meteo.com/v1/forecast?"
-        api-params {:latitude 50.5120
-                    :longitude 30.5082
-                    :hourly (->> ["temperature_2m"
-                                  "relativehumidity_2m",
-                                  "apparent_temperature"
-                                  "precipitation"
-                                  "rain"
-                                  "showers"
-                                  "snowfall"
-                                  "snow_depth"
-                                  "surface_pressure"
-                                  "cloudcover"
-                                  "windspeed_10m"
-                                  "winddirection_10m"
-                                  "windgusts_10m"]
-                                 (str/join ","))
-                    :daily (->> ["sunrise"
-                                 "sunset"]
-                                (str/join ","))
+        api-params {:latitude       (:latitude @params)
+                    :longitude      (:longitude @params)
+                    :hourly         (->> ["temperature_2m"
+                                          "relativehumidity_2m",
+                                          "apparent_temperature"
+                                          "precipitation"
+                                          "rain"
+                                          "showers"
+                                          "snowfall"
+                                          "snow_depth"
+                                          "surface_pressure"
+                                          "cloudcover"
+                                          "windspeed_10m"
+                                          "winddirection_10m"
+                                          "windgusts_10m"]
+                                         (str/join ","))
+                    :daily          (->> ["sunrise"
+                                          "sunset"]
+                                         (str/join ","))
                     :windspeed_unit "ms"
-                    :timezone "Europe%2FKyiv"
-                    :forecast_days 5}
+                    :timezone       "Europe%2FKyiv"
+                    :forecast_days  (:forecast-days @params)}
         params (->> api-params
                     (map (fn [[k v]]
                            (str (name k) "=" v)))
@@ -138,10 +144,10 @@
                  (= precipitation 0)
                  (> clouds 90)) (:cloud emoji)
                 (and
-                 (> precipitation 0.1)
+                 (> precipitation 0)
                  (< clouds 85)) (:sun-behind-rain-cloud emoji)
                 (and
-                 (> precipitation 0.1)
+                 (> precipitation 0)
                  (> clouds 84)) (:cloud-with-rain emoji)
                 :else "&#9940;")]
     (get-html-entity emoji {:style
@@ -163,8 +169,7 @@
           (< hour curr-hour) {:style {:opacity "0.6"}}
           :else nil)))))
 
-;; TODO: Add forecast days dropdown
-;; TODO: Add location chooser
+;; TODO: Add location dropdown
 ;; TODO: Fix vertical formatting
 
 (defn get-hidden-div []
@@ -175,17 +180,26 @@
 (defn app []
   [:div
    [:h1 "Windify"]
+   [:div
+    [:label {:for :forecast-days} "Forecast for:"]
+    [:select {:name :forecast-days
+              :id :forecast-days-num
+              :list :default-forecast-days
+              :value (:forecast-days @params)
+              :on-change (fn [e]
+                           (swap! params assoc :forecast-days (-> e .-target .-value))
+                           (get-data-from-api))}
+     [:option {:value 3} "3 days"]
+     [:option {:value 5} "5 days"]
+     [:option {:value 7} "7 days"]
+     [:option {:value 14} "14 days"]]]
 
    [:div
     [:pre [:code
            ;; EEST
            ;; (t/in (t/instant) "UTC+02:00")
            ;; (get-hour-unit-style "2023-08-07T18:00")
-           [:br]
-           #_(-> (t/now)
-                 (t/offset-by 3)
-                 (t/time)
-                 (t/minute))]]]
+           ]]]
 
    [:div
     {:style {:float "left"}}
@@ -197,7 +211,6 @@
                  :padding "0.2em"
                  :text-align :center
                  :border "0.5px solid gray"}}
-        ;; (.log js/console d v)
         [:div
          (-> (t/date d)
              t/day-of-week
@@ -216,16 +229,15 @@
         [:div
          {:style {:display :flex}}
          [:div {:style {:flex "1"
-                        ;; :text-align :left
                         :padding "0.1em"}}
           [:div :Hour]
           [:div (get-html-entity (:sun-behind-small-cloud emoji) {})]
           [:div "Rain," (get-hourly-unit :precipitation)]
-          [:div "T,"(get-hourly-unit :apparent_temperature)]
-          [:div "Wind,"(get-hourly-unit :windspeed_10m)]
-          [:div "Gusts,"(get-hourly-unit :windgusts_10m)]
+          [:div "T," (get-hourly-unit :apparent_temperature)]
+          [:div "Wind," (get-hourly-unit :windspeed_10m)]
+          [:div "Gusts," (get-hourly-unit :windgusts_10m)]
           [:div (get-hourly-unit :winddirection_10m)]
-          [:div "Clouds,"(get-hourly-unit :cloudcover)]]
+          [:div "Clouds," (get-hourly-unit :cloudcover)]]
 
          (for [hour (:hours v)]
            ^{:key (:time hour)}
