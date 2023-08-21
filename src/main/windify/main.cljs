@@ -187,6 +187,7 @@
 (defn get-wind-styling [time wind]
   (let [style (get-hour-unit-style time)]
     (assoc-in style [:style :color] (cond
+                                      (< wind 4)  "#ffffff80"
                                       (> wind 15) :red
                                       (> wind 10) :orangered
                                       :else :black))))
@@ -307,7 +308,7 @@
               [:div (get-rain-styling time precipitation) precipitation]
               [:div (get-temperature-styling time temperature) temperature]
               [:div (get-wind-styling time windspeed) windspeed]
-              [:div (get-hour-unit-style time) windgusts]
+              [:div (get-wind-styling time windgusts) windgusts]
               [:div (get-hour-unit-style time) (get-arrow winddirection)]
               [:div (get-hour-unit-style time) cloudcover]]))]]))]
 
