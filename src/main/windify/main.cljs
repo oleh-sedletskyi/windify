@@ -194,9 +194,11 @@
 (defn get-rain-styling [time rain]
   (let [style (get-hour-unit-style time)]
     (assoc-in style [:style :color] (cond
+                                      (= rain 0) "#ffffff80"
                                       (> rain 4) :blue
                                       :else :black))))
 
+;; TODO: Add flash message
 ;; TODO: Store location in cookies
 ;; TODO: Pick location from the map
 ;; TODO: Add coloring to temperature/wind/rain/wind-direction
