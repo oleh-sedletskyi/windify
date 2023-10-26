@@ -240,7 +240,7 @@
                              (get-data-from-api)))}
      [:option {:value "50.4236;30.382"} "Наталія"]
      [:option {:value "50.512;30.5082"} "Олег"]
-     [:option {:value "50.3857;30.322"} "Сашко"]]]
+     [:option {:value "42.7128;27.7453"} "Сашко"]]]
 
    [:div
     [:pre [:code
