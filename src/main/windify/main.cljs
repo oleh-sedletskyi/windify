@@ -134,7 +134,7 @@
                 :transform (str "rotate(" angle "deg)")}}]
     (get-html-entity (:north-arrow emoji) style)))
 
-(defn get-sky-view [precipitation clouds]
+(defn get-sky-view [precipitation clouds temperature]
   (let [emoji (cond
                 (and
                  (= precipitation 0)
@@ -151,6 +151,9 @@
                 (and
                  (= precipitation 0)
                  (> clouds 90)) (:cloud emoji)
+                (and
+                 (> precipitation 0)
+                 (< temperature -2)) (:cloud-with-snow emoji)
                 (and
                  (> precipitation 0)
                  (< clouds 85)) (:sun-behind-rain-cloud emoji)
@@ -199,6 +202,7 @@
                                       (> rain 4) :blue
                                       :else :black))))
 
+;; TODO: Limit state size after fetching
 ;; TODO: Add flash message
 ;; TODO: Store location in cookies
 ;; TODO: Pick location from the map
@@ -304,7 +308,7 @@
                (-> (t/date-time time)
                    (t/hour)
                    str)]
-              (get-sky-view precipitation cloudcover)
+              (get-sky-view precipitation cloudcover temperature)
               [:div (get-rain-styling time precipitation) precipitation]
               [:div (get-temperature-styling time temperature) temperature]
               [:div (get-wind-styling time windspeed) windspeed]
