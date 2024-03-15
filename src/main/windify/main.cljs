@@ -167,8 +167,7 @@
 
 (defn get-hour-unit-style [date]
   (let [curr-dt (-> (t/now)
-                    (t/offset-by 3) ;; TODO: Check https://juxt.github.io/tick/#_time_zones_offset
-                    )
+                    (t/offset-by 3))
         date (t/date-time date)]
     (when (= (t/date date) (t/date curr-dt))
       (let [curr-time (-> curr-dt
@@ -209,11 +208,6 @@
 ;; TODO: Add coloring to temperature/wind/rain/wind-direction
 ;; TODO: Fix vertical formatting
 
-(defn get-hidden-div []
-  [:div {:style {:opacity "0"
-                 ;; :padding "0.1em"
-                 }} "Tu"])
-
 (defn app []
   [:div
    [:h1 "Windify"]
@@ -245,14 +239,6 @@
      [:option {:value "50.4236;30.382"} "Наталія"]
      [:option {:value "50.512;30.5082"} "Олег"]
      [:option {:value "42.7128;27.7453"} "Сашко"]]]
-
-   [:div
-    [:pre [:code
-           ;; (str @params)
-           ;; EEST
-           ;; (t/in (t/instant) "UTC+02:00")
-           ;; (get-hour-unit-style "2023-08-07T18:00")
-           ]]]
 
    [:div
     {:style {:float "left"}}
@@ -314,21 +300,7 @@
               [:div (get-wind-styling time windspeed) windspeed]
               [:div (get-wind-styling time windgusts) windgusts]
               [:div (get-hour-unit-style time) (get-arrow winddirection)]
-              [:div (get-hour-unit-style time) cloudcover]]))]]))]
-
-   (comment
-     (for [key (keys @state)]
-       ^{:key (str key)} [:li key])
-     [:div [:p "hourly:"]
-      (for [key (keys (:hourly @state))]
-        ^{:key (str key)} [:li key])]
-     [:div
-      [:pre {:style {:white-space "pre-wrap"}} [:code (let [k (-> (keys @parsed-state) first)]
-                                                        (str {k (get @parsed-state k)}))]]])
-
-   (comment
-     [:div
-      [:pre [:code (get-api-url)]]])])
+              [:div (get-hour-unit-style time) cloudcover]]))]]))]])
 
 (defn mount! []
   (reagent-dom/render [app]
