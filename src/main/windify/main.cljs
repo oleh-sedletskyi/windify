@@ -236,10 +236,10 @@
                                                         (js/parseFloat v))))]
                              (swap! params assoc :latitude lat :longitude long)
                              (get-data-from-api)))}
-     [:option {:value "50.4236;30.382"} "Наталія"]
-     [:option {:value "50.512;30.5082"} "Олег"]
-     [:option {:value "42.7128;27.7453"} "Сашко"]]]
-
+     [:option {:value "50.7325;24.1636"} "Novovolynsk"]
+     [:option {:value "50.512;30.5082"} "Kyiv"]
+     [:option {:value "53.1841;-6.1456"} "Bray"]
+     [:option {:value "50.0678;14.3838"} "Prague"]]]
    [:div
     {:style {:float "left"}}
     (doall
