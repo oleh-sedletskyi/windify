@@ -11,8 +11,8 @@
 (defonce params
   (reagent/atom
    {:forecast-days 3
-    :latitude 50.5120
-    :longitude 30.5082}))
+    :latitude 52.736
+    :longitude -6.42}))
 
 (defn get-api-url []
   ;; 50.512082226364534, 30.508248275600494
@@ -38,7 +38,7 @@
                                           "sunset"]
                                          (str/join ","))
                     :windspeed_unit "ms"
-                    :timezone       "Europe%2FKyiv"
+                    :timezone       "Europe%2FLondon"
                     :forecast_days  (:forecast-days @params)}
         params (->> api-params
                     (map (fn [[k v]]
@@ -68,7 +68,7 @@
                          str))
          (map (fn [[k v]]
                 {k {:sunset (get-in daily-data [k :sunset])
-                    :sunrise (get-in daily-data [k :sunrise]) 
+                    :sunrise (get-in daily-data [k :sunrise])
                     :hours (->> v
                                 (sort-by #(t/date-time (:time %))))}}))
          (apply merge)
@@ -86,7 +86,7 @@
       (.then #(.json %))
       (.then #(js->clj % :keywordize-keys true))
       (.then #(handler %))
-    (.catch #(error-handler %))))
+      (.catch #(error-handler %))))
 
 (get-data-from-api)
 
@@ -168,6 +168,8 @@
 (defn get-hour-unit-style [date]
   (let [curr-dt (-> (t/now)
                     (t/offset-by 3))
+        ;; TODO: fix offset depending on location
+        ;; http://api.timezonedb.com/v2.1/get-time-zone?key=RP76TIWX9G50&format=json&by=position&lat=50.0678&lng=14.3838
         date (t/date-time date)]
     (when (= (t/date date) (t/date curr-dt))
       (let [curr-time (-> curr-dt
@@ -207,6 +209,7 @@
 ;; TODO: Pick location from the map
 ;; TODO: Add coloring to temperature/wind/rain/wind-direction
 ;; TODO: Fix vertical formatting
+;; TODO: Use geo location API search for coordinates: https://openweathermap.org/api/geocoding-api#:~:text=Geocoding%20API%20is%20a%20simple,integrated%20in%20all%20OpenWeather%20APIs.
 
 (defn app []
   [:div
@@ -237,7 +240,7 @@
                              (swap! params assoc :latitude lat :longitude long)
                              (get-data-from-api)))}
      [:option {:value "50.7325;24.1636"} "Novovolynsk"]
-     [:option {:value "50.512;30.5082"} "Kyiv"]
+     [:option {:value "52.736;-6.42"} "Cummer"]
      [:option {:value "53.1841;-6.1456"} "Bray"]
      [:option {:value "50.0678;14.3838"} "Prague"]]]
    [:div
@@ -304,7 +307,7 @@
 
 (defn mount! []
   (reagent-dom/render [app]
-                  (.getElementById js/document "app")))
+                      (.getElementById js/document "app")))
 
 (defn main! []
   (mount!)
