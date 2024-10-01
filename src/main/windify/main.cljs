@@ -167,7 +167,7 @@
 
 (defn get-hour-unit-style [date]
   (let [curr-dt (-> (t/now)
-                    (t/offset-by 3))
+                    (t/offset-by 1))
         ;; TODO: fix offset depending on location
         ;; http://api.timezonedb.com/v2.1/get-time-zone?key=RP76TIWX9G50&format=json&by=position&lat=50.0678&lng=14.3838
         date (t/date-time date)]
