@@ -11,7 +11,7 @@
 (defonce params
   (reagent/atom
    {:forecast-days 3
-    :latitude 52.736
+    :latitude 52.733
     :longitude -6.42}))
 
 (defn get-api-url []
@@ -240,7 +240,7 @@
                              (swap! params assoc :latitude lat :longitude long)
                              (get-data-from-api)))}
      [:option {:value "50.7325;24.1636"} "Novovolynsk"]
-     [:option {:value "52.736;-6.42"} "Cummer"]
+     [:option {:value "52.733;-6.42"} "Gorey"]
      [:option {:value "53.1841;-6.1456"} "Bray"]
      [:option {:value "50.0678;14.3838"} "Prague"]]]
    [:div
